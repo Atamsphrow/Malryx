@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Malryx
+GenericName=Antivirus
+GenericName[en]=Antivirus
+Comment=Analyse le systeme et les appareils connectes
+Comment[en]=Scan this system and connected devices
+Exec=/usr/bin/malryx %U
+Icon=malryx
+Terminal=false
+Categories=System;Security;Utility;
+Keywords=antivirus;malware;securite;scan;virus;clamav;
+StartupNotify=true
+StartupWMClass=com.atamsphrow.malryx

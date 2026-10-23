@@ -1,0 +1,26 @@
+#!/bin/sh
+# Post-suppression.
+#
+# Sur `remove` on ne touche a rien de personnel. Sur `purge` on retire les
+# signatures partagees, mais JAMAIS les quarantaines des utilisateurs : elles
+# sont dans leur dossier personnel et peuvent contenir un fichier legitime
+# qu'ils voudront restaurer. Les effacer a la desinstallation serait une perte
+# de donnees silencieuse.
+set -e
+
+case "$1" in
+  purge)
+    rm -rf /var/lib/malryx
+    echo "Malryx : les quarantaines et l'historique de chaque utilisateur sont" >&2
+    echo "  conserves dans ~/.local/share/malryx/. Supprimez-les a la main si" >&2
+    echo "  vous le souhaitez." >&2
+    ;;
+  remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+    ;;
+esac
+
+if command -v update-desktop-database >/dev/null 2>&1; then
+  update-desktop-database -q /usr/share/applications || true
+fi
+
+exit 0

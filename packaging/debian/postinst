@@ -1,0 +1,62 @@
+#!/bin/sh
+# Post-installation de Malryx.
+#
+# Ce script ne fait rien d'irreversible et n'active aucun service par defaut :
+# un antivirus qui se lance en daemon sans qu'on le lui demande est une
+# mauvaise surprise. Le service de protection en temps reel est fourni mais
+# laisse desactive, a l'utilisateur de l'activer.
+
+set -e
+
+case "$1" in
+  configure)
+    # Rend le lanceur visible dans le menu des applications.
+    if command -v update-desktop-database >/dev/null 2>&1; then
+      update-desktop-database -q /usr/share/applications || true
+    fi
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+      gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
+    fi
+
+    # Les bases de signatures sont partagees par tous les utilisateurs, en
+    # lecture seule. Les donnees personnelles (quarantaine, historique,
+    # reglages) restent dans le dossier de chaque utilisateur, jamais ici.
+    mkdir -p /var/lib/malryx/signatures /var/lib/malryx/yara
+    chmod 755 /var/lib/malryx /var/lib/malryx/signatures /var/lib/malryx/yara
+
+    # ClamAV est une recommandation, pas une dependance stricte : on informe
+    # sans echouer si le daemon n'est pas la.
+    if ! command -v clamscan >/dev/null 2>&1; then
+      echo "Malryx : ClamAV n'est pas installe." >&2
+      echo "  Pour activer ce moteur :" >&2
+      echo "    sudo apt install clamav-daemon clamav-freshclam" >&2
+      echo "    sudo freshclam" >&2
+    elif [ ! -S /var/run/clamav/clamd.ctl ] && [ ! -S /run/clamav/clamd.ctl ]; then
+      echo "Malryx : ClamAV est installe mais le daemon clamd ne tourne pas." >&2
+      echo "  Les scans seront nettement plus lents (repli sur clamscan)." >&2
+      echo "  Pour l'activer : sudo systemctl enable --now clamav-daemon" >&2
+    fi
+
+    if ! command -v adb >/dev/null 2>&1; then
+      echo "Malryx : adb absent, le scan Android sera limite au mode MTP." >&2
+      echo "  Pour l'activer : sudo apt install android-tools-adb" >&2
+    fi
+
+    # L'unite systemd est installee mais volontairement pas activee.
+    if command -v systemctl >/dev/null 2>&1; then
+      systemctl daemon-reload || true
+      echo "Malryx : la protection en temps reel est disponible mais inactive." >&2
+      echo "  Pour l'activer : sudo systemctl enable --now malryx-realtime" >&2
+    fi
+    ;;
+
+  abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+  *)
+    echo "postinst appele avec un argument inattendu : $1" >&2
+    exit 1
+    ;;
+esac
+
+exit 0

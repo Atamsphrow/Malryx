@@ -1,0 +1,1 @@
+"""Package db de Malryx."""

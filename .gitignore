@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# PyInstaller
+build/
+dist/
+*.spec.bak
+
+# Flutter / Dart
+frontend/build/
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/linux/flutter/ephemeral/
+frontend/windows/flutter/ephemeral/
+.packages
+pubspec.lock
+
+# Donnees locales de Malryx (ne doivent jamais etre versionnees :
+# la quarantaine contient des fichiers malveillants reels)
+*.db
+*.db-wal
+*.db-shm
+quarantine/
+settings.json
+malryx.log
+
+# Systeme
+.DS_Store
+Thumbs.db
+*.swp

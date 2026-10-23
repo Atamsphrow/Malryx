@@ -1,0 +1,20 @@
+# Base de signatures locale livree avec Malryx.
+#
+# Format, une entree par ligne :
+#   <sha256>:<nom de la menace>:<severite>
+# Severites acceptees : clean, low, medium, high, critical
+# Les lignes vides et celles commencant par # sont ignorees.
+#
+# Ce fichier est importe automatiquement au premier demarrage, puis stocke en
+# base. Pour l'enrichir ensuite sans reconstruire le paquet .deb :
+#   malryx signatures import ma-base.hashes
+#   ou POST /api/signatures/import {"path": "..."}
+#
+# Cette base volontairement minimale ne remplace pas ClamAV : elle sert aux
+# empreintes ciblees (un echantillon precis rencontre sur un parc) et a la
+# verification que la chaine de detection fonctionne.
+
+# --- Fichiers de test standard ---------------------------------------------
+# EICAR : chaine de test officielle des antivirus, totalement inoffensive.
+# Permet de verifier que la detection par empreinte fonctionne.
+275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f:EICAR-Test-File:low

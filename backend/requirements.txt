@@ -1,0 +1,23 @@
+# Backend Malryx
+# Installation : python -m pip install -r backend/requirements.txt
+
+# --- Coeur, obligatoire -----------------------------------------------------
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.32,<1.0
+pydantic>=2.9,<3.0
+websockets>=13.0            # transport WebSocket pour uvicorn
+requests>=2.32,<3.0         # appels VirusTotal
+
+# --- Moteurs optionnels -----------------------------------------------------
+# yara-python demande un compilateur C et libyara. Le moteur YARA se declare
+# indisponible si le module est absent, l'application demarre quand meme.
+yara-python>=4.5,<5.0
+
+# --- Empaquetage ------------------------------------------------------------
+# Backend compile en executable autonome pour le .deb (section 2 de la spec).
+pyinstaller>=6.10,<7.0
+
+# --- Developpement (facultatif) --------------------------------------------
+# pytest>=8.0
+# httpx>=0.27              # client de test pour TestClient FastAPI
+# ruff>=0.6

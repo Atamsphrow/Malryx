@@ -1,0 +1,33 @@
+[Unit]
+Description=Malryx - protection en temps reel
+Documentation=man:malryx(1)
+After=network.target
+Wants=clamav-daemon.service
+
+[Service]
+Type=simple
+# Le service tourne en root pour pouvoir surveiller l'ensemble du systeme de
+# fichiers, mais avec les capacites reduites au strict necessaire.
+User=root
+ExecStart=/usr/lib/malryx/malryx-backend --port 8765
+Restart=on-failure
+RestartSec=5
+
+# Durcissement : le backend n'a pas besoin d'ecrire ailleurs que dans ses
+# propres dossiers, ni d'acceder au reseau au-dela de la boucle locale et de
+# VirusTotal.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+MemoryDenyWriteExecute=true
+StateDirectory=malryx
+# ProtectSystem=strict serait plus sur, mais empecherait la mise en quarantaine
+# de fichiers hors /home. On garde donc un acces en ecriture au systeme.
+ProtectHome=false
+
+[Install]
+WantedBy=multi-user.target
