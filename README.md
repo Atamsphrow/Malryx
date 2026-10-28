@@ -59,8 +59,12 @@ backend renvoie une erreur explicite plutôt que de faire semblant :
   affectés imbriqués, tri par sévérité, version corrigée quand OSV la
   fournit ; un échec réseau ne fait pas échouer le scan. L'inventaire dpkg
   distant (base du recoupement) fonctionne déjà.
-- **Protection en temps réel** : le réglage existe et est persisté, mais aucune
-  surveillance inotify n'est branchée. Le commutateur est grisé dans l'UI.
+- **Protection en temps réel** : durcie le 2026-10-28 — watches récursifs
+  (dossiers créés après démarrage inclus), debounce 1 s de stabilité
+  (plafond 10 s), déduplication par (mtime, taille), scans dans un executor
+  (un à la fois, hors boucle inotify), IN_Q_OVERFLOW journalisé +
+  re-balayage. Validé en direct sur cette VM : fichier en racine Downloads
+  et fichier dans un sous-dossier créé après démarrage, tous deux scannés.
 - **Agent léger Windows** (optionnel dans la spec §4.3)
 - **Archives `.rar` / `.7z`** : extraction implémentée le 2026-10-28 via
   l'outil externe `7z` (p7zip-full, + p7zip-rar non-free pour `.rar`) :
