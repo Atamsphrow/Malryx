@@ -76,7 +76,11 @@ backend renvoie une erreur explicite plutôt que de faire semblant :
   démarré au lancement et à chaque changement de réglage). Correction du
   2026-10-28 : le jour de semaine cron était décalé d'un jour (un scan
   « weekly » déclenchait lundi au lieu de dimanche) et la règle crontab(5)
-  jour-du-mois / jour-de-semaine (OU) est désormais respectée.
+  jour-du-mois / jour-de-semaine (OU) est désormais respectée. Un second
+  bug trouvé par la validation lot 5 a été corrigé le même jour : la
+  boucle lançait un scan complet immédiatement au démarrage même si
+  l'échéance était dans plusieurs jours ; elle calcule désormais
+  l'échéance d'abord et ne lance que si elle est due.
 
 ---
 

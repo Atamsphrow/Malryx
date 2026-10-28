@@ -207,7 +207,11 @@ class ScanScheduler:
                     continue
 
                 now = datetime.now()
-                if self._next_run is None or now >= self._next_run:
+                if self._next_run is None:
+                    # Premier calcul : ne PAS lancer immediatement, l'echeance
+                    # peut etre dans plusieurs jours (correctif lot 5).
+                    self._next_run = spec.next_fire_after(now)
+                if now >= self._next_run:
                     # Heure du scan atteinte
                     self._next_run = spec.next_fire_after(now)
                     log.info("Lancement du scan planifie (prochain : %s)", self._next_run)
