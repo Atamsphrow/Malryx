@@ -62,10 +62,12 @@ backend renvoie une erreur explicite plutôt que de faire semblant :
 - **Protection en temps réel** : le réglage existe et est persisté, mais aucune
   surveillance inotify n'est branchée. Le commutateur est grisé dans l'UI.
 - **Agent léger Windows** (optionnel dans la spec §4.3)
-- **Archives `.rar` / `.7z`** : extraction toujours non disponible (outil
-  externe requis) ; `zip` et `tar` (avec gz/bz2/xz) sont gérés. Depuis le
-  2026-10-28, une archive `.rar`/`.7z` n'est plus passée sous silence : le
-  scan enregistre une erreur explicite « format non pris en charge ».
+- **Archives `.rar` / `.7z`** : extraction implémentée le 2026-10-28 via
+  l'outil externe `7z` (p7zip-full, + p7zip-rar non-free pour `.rar`) :
+  sans shell, stdin vide, liens symboliques ignorés, garde-fous anti-bombe
+  ré-appliqués. Si `7z` est absent ou échoue, le scan enregistre une
+  erreur explicite au lieu de passer l'archive sous silence. `zip` et `tar`
+  (avec gz/bz2/xz) sont gérés en pur Python.
 - **Scan planifié** : planificateur branché (`backend/core/scheduler.py`,
   démarré au lancement et à chaque changement de réglage). Correction du
   2026-10-28 : le jour de semaine cron était décalé d'un jour (un scan

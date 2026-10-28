@@ -5,7 +5,7 @@ Priority: optional
 Architecture: amd64
 Maintainer: Atamsphrow <maninonatsaramaso@gmail.com>
 Depends: libgtk-3-0, libblkid1, liblzma5
-Recommends: clamav-daemon, clamav-freshclam, android-tools-adb, util-linux
+Recommends: clamav-daemon, clamav-freshclam, android-tools-adb, util-linux, p7zip-full
 Suggests: smbclient, openssh-client
 Installed-Size: 120000
 Homepage: https://github.com/atamsphrow/malryx

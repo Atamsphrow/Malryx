@@ -42,7 +42,7 @@ from core.models import (
 )
 from core.package_scanner import list_installed_packages, verify_package_integrity
 from core.cve_checker import check_packages_cve
-from core.platform_compat import IS_WINDOWS
+from core.platform_compat import IS_WINDOWS, have_command, run
 from core.process_scanner import list_running_processes
 from core.quarantine import QuarantineManager
 from db.local_db import LocalDB
@@ -565,8 +565,8 @@ class ScanManager:
                 self._record_error(
                     job.result,
                     f"archive {archive} : format non pris en charge, "
-                    "contenu non analyse (extraction .rar/.7z non disponible "
-                    "dans cette version)",
+                    "contenu non analyse (outil 7z absent : installez "
+                    "p7zip-full, et p7zip-rar pour .rar)",
                 )
                 return
             for member_path, member_name in extracted:
@@ -606,10 +606,68 @@ class ScanManager:
             return self._extract_zip(archive, dest)
         if tarfile.is_tarfile(archive):
             return self._extract_tar(archive, dest)
-        # .rar / .7z demandent un outil externe : hors perimetre de cette
-        # version. L'appelant (_scan_archive) enregistre une erreur explicite
-        # au lieu de passer l'archive sous silence.
+        if suffix in {".rar", ".7z"}:
+            # Extraction externe optionnelle (lot 3) : 7z absent -> None, et
+            # l'appelant enregistre une erreur explicite au lieu de passer
+            # l'archive sous silence. Un echec de 7z leve RuntimeError, que
+            # _scan_archive enregistre de la meme facon.
+            if not have_command("7z"):
+                return None
+            return self._extract_7z(archive, dest)
         return None
+
+    def _extract_7z(self, archive: str, dest: str) -> list[tuple[str, str]]:
+        """Extrait .rar/.7z via l'outil externe 7z (p7zip-full, + p7zip-rar
+        pour .rar), sans shell et sans invite interactive.
+
+        Securite : stdin vide (aucune invite de mot de passe ne peut
+        bloquer), arguments en liste, timeout 300 s. Apres extraction,
+        seuls les fichiers reguliers strictement dans dest sont retenus :
+        les liens symboliques (restaures par 7z sur Linux) sont ignores
+        pour ne jamais scanner hors du dossier temporaire, et les
+        garde-fous anti-bombe (1 Gio, 10 000 membres, ratio 200) sont
+        re-appliques : depasses, tout le contenu est rejete avec erreur.
+        """
+        res = run(
+            ["7z", "x", "-y", "-bd", f"-o{dest}", "--", archive],
+            timeout=300,
+            stdin_data="",
+        )
+        if not res.ok:
+            detail = (res.stderr or res.stdout or "").strip().splitlines()
+            detail = detail[0][:200] if detail else f"code {res.code}"
+            if "password" in (res.stderr or "").lower() or "wrong password" in (res.stderr or "").lower():
+                raise RuntimeError(f"archive chiffree, mot de passe non pris en charge ({detail})")
+            raise RuntimeError(f"extraction 7z echouee ({detail})")
+        out: list[tuple[str, str]] = []
+        total = 0
+        compressed = max(os.path.getsize(archive), 1)
+        dest_abs = os.path.abspath(dest)
+        for root, dirs, files in os.walk(dest_abs):
+            # Ne jamais descendre dans un repertoire lie symboliquement.
+            dirs[:] = [
+                d for d in dirs
+                if not os.path.islink(os.path.join(root, d))
+            ]
+            for name in files:
+                path = os.path.join(root, name)
+                if os.path.islink(path):
+                    continue
+                rel = os.path.relpath(path, dest_abs)
+                if rel.startswith(".." + os.sep) or rel == "..":
+                    continue
+                if not os.path.isfile(path):
+                    continue
+                total += os.path.getsize(path)
+                if (
+                    total > ARCHIVE_MAX_TOTAL_BYTES
+                    or total / compressed > ARCHIVE_MAX_RATIO
+                    or len(out) >= ARCHIVE_MAX_MEMBERS
+                ):
+                    log.warning("archive %s ignoree : bombe de decompression probable", archive)
+                    raise RuntimeError("limite anti-bombe depassee (taille, membres ou ratio)")
+                out.append((path, rel))
+        return out
 
     def _extract_zip(self, archive: str, dest: str) -> list[tuple[str, str]]:
         out: list[tuple[str, str]] = []
