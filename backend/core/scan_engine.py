@@ -41,6 +41,7 @@ from core.models import (
     Threat,
 )
 from core.package_scanner import list_installed_packages, verify_package_integrity
+from core.cve_checker import check_packages_cve
 from core.platform_compat import IS_WINDOWS
 from core.process_scanner import list_running_processes
 from core.quarantine import QuarantineManager
@@ -757,6 +758,20 @@ class ScanManager:
             job.result.files_scanned += 1
             job.progress.files_scanned = job.result.files_scanned
             self._publish_progress(job)
+
+        # Recoupement CVE (opt-in, OSV.dev) : apres l'integrite, jamais a la
+        # place. Un echec reseau n'efface pas les menaces deja trouvees.
+        if getattr(self.settings, "cve_enabled", False):
+            job.check_cancelled()
+            job.progress.phase = "verification_cve"
+            job.progress.current_file = "Verification CVE (OSV.dev)"
+            self._publish_progress(job, force=True)
+            cve_result = check_packages_cve(packages)
+            for threat in cve_result.threats:
+                job.check_cancelled()
+                self._register_threat(job, threat)
+            for error in cve_result.errors:
+                self._record_error(job.result, error)
 
         self._publish_progress(job, force=True)
 

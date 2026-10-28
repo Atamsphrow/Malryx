@@ -80,6 +80,14 @@ class SettingsScreen extends StatelessWidget {
                 onChanged: (v) => state.updateSetting('heuristics_enabled', v),
               ),
               _Toggle(
+                title: 'Vérification CVE (OSV)',
+                subtitle: 'Recoupe les paquets installés avec OSV.dev. '
+                    'Opt-in : envoie les noms et versions des paquets à un '
+                    'service cloud, désactivé par défaut.',
+                value: settings['cve_enabled'] as bool? ?? false,
+                onChanged: (v) => state.updateSetting('cve_enabled', v),
+              ),
+              _Toggle(
                 title: 'Fouiller les archives',
                 subtitle: 'Extrait zip et tar pour analyser leur contenu.',
                 value: settings['scan_archives'] as bool? ?? true,

@@ -53,9 +53,12 @@ backend renvoie une erreur explicite plutôt que de faire semblant :
 
 - **Scan mémoire / processus** (`type: memory`) → `ScanStatus.failed` avec le
   motif
-- **Paquets installés vs CVE** (`type: packages`) → idem ; l'inventaire dpkg
-  distant fonctionne déjà, il manque le recoupement avec une base de
-  vulnérabilités
+- **Paquets installés vs CVE** (`type: packages`) : recoupement implémenté
+  le 2026-10-28 via OSV.dev (opt-in, réglage `cve_enabled` désactivé par
+  défaut : noms+versions envoyés au cloud). Une menace par CVE, paquets
+  affectés imbriqués, tri par sévérité, version corrigée quand OSV la
+  fournit ; un échec réseau ne fait pas échouer le scan. L'inventaire dpkg
+  distant (base du recoupement) fonctionne déjà.
 - **Protection en temps réel** : le réglage existe et est persisté, mais aucune
   surveillance inotify n'est branchée. Le commutateur est grisé dans l'UI.
 - **Agent léger Windows** (optionnel dans la spec §4.3)

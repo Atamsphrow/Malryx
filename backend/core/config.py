@@ -120,6 +120,7 @@ class Settings:
     realtime_protection: bool = False
     autoscan_removable: bool = True
     virustotal_enabled: bool = False
+    cve_enabled: bool = False  # opt-in : envoie noms+versions des paquets a OSV.dev
     virustotal_api_key: str = ""
     clamav_enabled: bool = True
     yara_enabled: bool = True
