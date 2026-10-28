@@ -45,7 +45,11 @@ class CronSpec:
     hour: set[int] = None
     day: set[int] = None
     month: set[int] = None
-    dow: set[int] = None   # 0-6 (dimanche=0)
+    dow: set[int] = None   # 0-6, cron : 0 (et 7) = dimanche
+    # True si le champ d'origine etait "*" : indispensable pour la regle
+    # crontab(5) jour-du-mois / jour-de-semaine (voir matches()).
+    day_is_star: bool = True
+    dow_is_star: bool = True
 
     def __post_init__(self):
         if self.minute is None:
@@ -58,14 +62,33 @@ class CronSpec:
             self.month = set(range(1, 13))
         if self.dow is None:
             self.dow = set(range(7))
+        # Normalise un eventuel 7 (dimanche en cron) vers 0.
+        self.dow = {0 if v == 7 else v for v in self.dow}
 
     def matches(self, dt: datetime) -> bool:
+        # Python : lundi=0 .. dimanche=6 ; cron : dimanche=0 .. samedi=6.
+        # Comparer dt.weekday() directement a dow decalait d'un jour
+        # (weekly "0 3 * * 0" declenchait lundi au lieu de dimanche).
+        cron_dow = (dt.weekday() + 1) % 7
+        day_match = dt.day in self.day
+        dow_match = cron_dow in self.dow
+        # crontab(5) : minute, heure et mois doivent correspondre, et pour
+        # les deux champs jour, au moins l'un des deux doit correspondre.
+        # Si l'un est "*", seul l'autre decide ; si les deux sont restreints,
+        # c'est un OU, pas un ET.
+        if self.day_is_star and self.dow_is_star:
+            day_ok = True
+        elif self.day_is_star:
+            day_ok = dow_match
+        elif self.dow_is_star:
+            day_ok = day_match
+        else:
+            day_ok = day_match or dow_match
         return (
             dt.minute in self.minute
             and dt.hour in self.hour
-            and dt.day in self.day
             and dt.month in self.month
-            and dt.weekday() in self.dow
+            and day_ok
         )
 
     def next_fire_after(self, after: datetime) -> datetime:
@@ -124,8 +147,11 @@ def parse_cron_expression(expr: str) -> CronSpec | None:
         hour = parse_field(parts[1], 0, 23)
         day = parse_field(parts[2], 1, 31)
         month = parse_field(parts[3], 1, 12)
-        dow = parse_field(parts[4], 0, 6)  # 0 = dimanche
-        return CronSpec(minute=minute, hour=hour, day=day, month=month, dow=dow)
+        dow = parse_field(parts[4], 0, 7)  # 0 ou 7 = dimanche (normalise en 0)
+        return CronSpec(
+            minute=minute, hour=hour, day=day, month=month, dow=dow,
+            day_is_star=(parts[2] == "*"), dow_is_star=(parts[4] == "*"),
+        )
     except Exception as exc:
         log.warning("Echec parsing cron '%s' : %s", expr, exc)
         return None

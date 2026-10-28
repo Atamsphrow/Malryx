@@ -59,9 +59,15 @@ backend renvoie une erreur explicite plutôt que de faire semblant :
 - **Protection en temps réel** : le réglage existe et est persisté, mais aucune
   surveillance inotify n'est branchée. Le commutateur est grisé dans l'UI.
 - **Agent léger Windows** (optionnel dans la spec §4.3)
-- **Archives `.rar` / `.7z`** : demandent un outil externe ; `zip` et `tar`
-  (avec gz/bz2/xz) sont gérés
-- **Scan planifié** : le champ cron est stocké, aucun ordonnanceur ne le lit
+- **Archives `.rar` / `.7z`** : extraction toujours non disponible (outil
+  externe requis) ; `zip` et `tar` (avec gz/bz2/xz) sont gérés. Depuis le
+  2026-10-28, une archive `.rar`/`.7z` n'est plus passée sous silence : le
+  scan enregistre une erreur explicite « format non pris en charge ».
+- **Scan planifié** : planificateur branché (`backend/core/scheduler.py`,
+  démarré au lancement et à chaque changement de réglage). Correction du
+  2026-10-28 : le jour de semaine cron était décalé d'un jour (un scan
+  « weekly » déclenchait lundi au lieu de dimanche) et la règle crontab(5)
+  jour-du-mois / jour-de-semaine (OU) est désormais respectée.
 
 ---
 

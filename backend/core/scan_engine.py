@@ -557,6 +557,16 @@ class ScanManager:
             tmpdir = tempfile.mkdtemp(prefix="malryx-arc-")
             extracted = self._extract(archive, tmpdir)
             if extracted is None:
+                # Format reconnu mais non extractible ici (.rar/.7z) : ne
+                # JAMAIS laisser croire que l'archive a ete analysee.
+                # L'erreur est enregistree, le scan continue sur les autres
+                # fichiers, aucune menace n'est inventee.
+                self._record_error(
+                    job.result,
+                    f"archive {archive} : format non pris en charge, "
+                    "contenu non analyse (extraction .rar/.7z non disponible "
+                    "dans cette version)",
+                )
                 return
             for member_path, member_name in extracted:
                 job.check_cancelled()
@@ -595,7 +605,9 @@ class ScanManager:
             return self._extract_zip(archive, dest)
         if tarfile.is_tarfile(archive):
             return self._extract_tar(archive, dest)
-        # .rar / .7z demandent un outil externe : hors perimetre de cette version.
+        # .rar / .7z demandent un outil externe : hors perimetre de cette
+        # version. L'appelant (_scan_archive) enregistre une erreur explicite
+        # au lieu de passer l'archive sous silence.
         return None
 
     def _extract_zip(self, archive: str, dest: str) -> list[tuple[str, str]]:
