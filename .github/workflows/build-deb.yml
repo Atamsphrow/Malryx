@@ -1,0 +1,55 @@
+# Build du paquet .deb Malryx Linux sur GitHub Actions (ubuntu-24.04).
+# Declenche : chaque push sur main + lancement manuel.
+# Produit : dist/malryx_0.1.0_amd64.deb, publie en artefact du run
+# (pas de release automatique : le .deb n'est pas signe).
+name: Build .deb
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-deb:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependances systeme (Flutter Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake git ninja-build pkg-config \
+            libgtk-3-dev liblzma-dev libstdc++-12-dev dpkg-dev fakeroot
+
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dependances backend (dont PyInstaller)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Flutter stable
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Construire le .deb
+        run: ./packaging/build_deb.sh
+
+      - name: Verifier le paquet
+        run: |
+          ls -lh dist/
+          dpkg-deb --info dist/*.deb
+
+      - name: Publier le .deb en artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: malryx-deb
+          path: dist/*.deb
+          retention-days: 30
