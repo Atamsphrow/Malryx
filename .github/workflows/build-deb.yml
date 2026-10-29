@@ -40,7 +40,7 @@ jobs:
           channel: stable
 
       - name: Construire le .deb
-        run: ./packaging/build_deb.sh
+        run: bash ./packaging/build_deb.sh
 
       - name: Verifier le paquet
         run: |
